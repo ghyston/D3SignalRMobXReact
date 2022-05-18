@@ -64,15 +64,23 @@ const CirclesField = () => {
             .append("circle")
             .attr("cx", (dto: CircleDto) => dto.x)
             .attr("cy", (dto: CircleDto) => dto.y)
-            .attr("r", (dto: CircleDto) => dto.r)
+            .attr("r", 0)
             .attr("fill", (dto: CircleDto) => dto.color)
             .on("click", async (e: MouseEvent, dto: CircleDto) => {
                 e.stopPropagation();
                 await connection.send('RemoveCircle', dto.id);
-            });
+            })
+            .transition()
+            .ease(d3.easeBounceOut)
+            .duration(300)
+            .attr("r", (dto: CircleDto) => dto.r);
 
         allCircles
             .exit()
+            .transition()
+            .ease(d3.easeQuadIn)
+            .duration(300)
+            .attr("r", 0)
             .remove();
     }
 
