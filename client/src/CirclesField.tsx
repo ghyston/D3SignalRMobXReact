@@ -34,6 +34,8 @@ const CirclesField = () => {
             setCircles(circles.filter(c => c.id !== id));
         })
 
+        connection.send('SubscribeToColor', "red");
+
     }, [connection, circles])
 
     // retrieve initial set of circles

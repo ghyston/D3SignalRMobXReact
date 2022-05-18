@@ -11,7 +11,7 @@ public class CircleHub : Hub<ICirclesClient>
 
     public CircleHub(ICirclesContext circlesContext) => this.circlesContext = circlesContext;
 
-    private static string[] ColorCodes = {"blue", "orange", "yellow", "green"};
+    private static string[] ColorCodes = {"blue", "orange", "yellow", "green", "red"};
     
     private string RandomColor()
     {
@@ -35,7 +35,9 @@ public class CircleHub : Hub<ICirclesClient>
         await circlesContext.Save();
         
         // TODO: check, how to send messages to not all clients
-        await Clients.All.CircleCreated(circle.CreateDto());
+        var createDto = circle.CreateDto();
+        await Clients.Group(circle.Color).CircleCreated(createDto);
+        await Clients.Caller.CircleCreated(createDto);
     }
 
     public async Task RemoveCircle(int id)
@@ -49,6 +51,12 @@ public class CircleHub : Hub<ICirclesClient>
         await circlesContext.Save();
 
         // TODO: check, how to send messages to not all clients
-        await Clients.All.CircleRemoved(circle.Id);
+        await Clients.Group(circle.Color).CircleRemoved(circle.Id);
+        await Clients.Caller.CircleRemoved(circle.Id);
+    }
+
+    public async Task SubscribeToColor(string color)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, color);
     }
 }
