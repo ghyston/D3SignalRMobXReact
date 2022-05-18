@@ -4,5 +4,6 @@ namespace D3SignalServer.Interfases;
 
 public interface ICirclesClient
 {
-    Task NewCircle(CircleDto dto);
+    Task CircleCreated(CircleDto dto);
+    Task CircleRemoved(int id);
 }

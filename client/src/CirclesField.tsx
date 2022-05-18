@@ -2,13 +2,7 @@ import { HubConnection, HubConnectionBuilder, HubConnectionState } from "@micros
 import axios from "axios";
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
-
-interface CircleDto {
-    x: number;
-    y: number;
-    r: number;
-    color: string;
-}
+import CircleDto from "./CircleDto";
 
 const CirclesField = () => {
 
@@ -20,11 +14,6 @@ const CirclesField = () => {
 
         connect
             .start()
-            .then(_ => {
-                alert("connection started!");
-                connection?.on("NewCircle", onNewCircle)
-            })
-            .catch(e => alert(`Connection failed: ${e}`));
 
         return connect;
     }
@@ -34,27 +23,21 @@ const CirclesField = () => {
     const [connection] = useState<HubConnection>(createConnection);
 
     // Subscribe to new circles
-    /*useEffect(() => {
+    useEffect(() => {
+        connection.off("CircleCreated");
+        connection.on("CircleCreated", (dto: CircleDto) => {
+            setCircles([...circles, dto]);
+        })
 
-        connection
-            .start()
-            .then(_ => {
-                alert("connection started!");
-                connection?.on("NewCircle", onNewCircle)
-            })
-            .catch(e => alert(`Connection failed: ${e}`));
+        connection.off("CircleRemoved");
+        connection.on("CircleRemoved", (id: number) => {
+            setCircles(circles.filter(c => c.id !== id));
+        })
 
-    }, [])*/
-
-    const onNewCircle = (dto: CircleDto) => {
-        alert(`onNewCircle: ${dto.x} ${dto.y} ${dto.r}`);
-        setCircles([...circles, dto]);
-        alert(`circles amount: ${circles.length}`)
-    }
+    }, [connection, circles])
 
     // retrieve initial set of circles
     useEffect(() => {
-        alert("requesting circles");
         axios.get<CircleDto[]>(
             'https://localhost:7181/circles',
             {
@@ -65,7 +48,6 @@ const CirclesField = () => {
         )
             .then((response) => {
                 setCircles(response.data);
-                alert("initial circles retrieved");
             })
     }, [])
 
@@ -73,12 +55,9 @@ const CirclesField = () => {
         if (!svgRef.current) return;
         const graph = d3.select(svgRef.current);
 
-        //alert("draw circles!");
-        console.log(`draw circles amount: ${circles.length}`)
-
         var allCircles = graph
-            .selectAll("circle")
-            .data(circles);
+            .selectAll<SVGCircleElement, CircleDto>("circle")
+            .data(circles, (d: CircleDto) => d.id);
 
         allCircles
             .enter()
@@ -87,6 +66,10 @@ const CirclesField = () => {
             .attr("cy", (dto: CircleDto) => dto.y)
             .attr("r", (dto: CircleDto) => dto.r)
             .attr("fill", (dto: CircleDto) => dto.color)
+            .on("click", async (e: MouseEvent, dto: CircleDto) => {
+                e.stopPropagation();
+                await connection.send('RemoveCircle', dto.id);
+            });
 
         allCircles
             .exit()

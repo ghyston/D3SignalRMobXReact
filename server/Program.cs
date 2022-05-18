@@ -27,10 +27,12 @@ builder.Services.AddCors(opt => //TODO: investigate, which policies are really n
 var app = builder.Build();
 
 // automigration
-app.Services
+var context = app.Services
     .CreateScope()
     .ServiceProvider
-    .GetService<CirclesContext>()?
+    .GetService<CirclesContext>();
+
+context?
     .Database
     .Migrate();
 
@@ -38,11 +40,6 @@ app.UseCors("ClientPermission");
 
 app.MapHub<CircleHub>("/hub/circle");
 app.MapGet("/", () => "Hello World!");
-//TODO: take from db
-app.MapGet("/circles", () => new List<CircleDto> {
-    new CircleDto(0, 0, 20, "blue"),
-    new CircleDto(40, 50, 25, "orange"),
-    new CircleDto(20, 100, 10, "green"),
- } );
+app.MapGet("/circles", () => context?.Circles.Select(c => c.CreateDto()).ToList() ??  new List<CircleDto>() );
 
 app.Run();

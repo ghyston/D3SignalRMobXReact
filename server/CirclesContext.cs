@@ -5,6 +5,7 @@ namespace D3SignalServer.Models;
 public interface ICirclesContext
 {
     DbSet<Circle> Circles { get; }
+    Task Save();
 }
 
 public class CirclesContext: DbContext, ICirclesContext
@@ -14,4 +15,6 @@ public class CirclesContext: DbContext, ICirclesContext
     }
 
     public DbSet<Circle> Circles => Set<Circle>();
+
+    public async Task Save() => await SaveChangesAsync();
 }
