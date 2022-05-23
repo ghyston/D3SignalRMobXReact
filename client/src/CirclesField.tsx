@@ -1,10 +1,12 @@
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from "@microsoft/signalr";
 import axios from "axios";
 import * as d3 from "d3";
+import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import CircleDto from "./CircleDto";
+import { circlesStore } from "./CirclesStore";
 
-const CirclesField = () => {
+const CirclesField = observer(() => {
 
     const createConnection = () => {
         const connect = new HubConnectionBuilder()
@@ -19,24 +21,23 @@ const CirclesField = () => {
     }
 
     const svgRef = useRef(null);
-    const [circles, setCircles] = useState<CircleDto[]>([]);
     const [connection] = useState<HubConnection>(createConnection);
 
     // Subscribe to new circles
     useEffect(() => {
         connection.off("CircleCreated");
         connection.on("CircleCreated", (dto: CircleDto) => {
-            setCircles([...circles, dto]);
+            circlesStore.addCircle(dto)
         })
 
         connection.off("CircleRemoved");
         connection.on("CircleRemoved", (id: number) => {
-            setCircles(circles.filter(c => c.id !== id));
+            circlesStore.removeCircle(id)
         })
 
         connection.send('SubscribeToColor', "red");
 
-    }, [connection, circles])
+    }, [connection])
 
     // retrieve initial set of circles
     useEffect(() => {
@@ -49,17 +50,17 @@ const CirclesField = () => {
             }
         )
             .then((response) => {
-                setCircles(response.data);
+                circlesStore.updateCircles(response.data)
             })
     }, [])
 
-    const drawCircles = () => {
+    const drawCircles = (circles: CircleDto[]) => {
         if (!svgRef.current) return;
         const graph = d3.select(svgRef.current);
 
         var allCircles = graph
             .selectAll<SVGCircleElement, CircleDto>("circle")
-            .data(circles, (d: CircleDto) => d.id);
+            .data(circlesStore.circles, (d: CircleDto) => d.id);
 
         allCircles
             .enter()
@@ -95,17 +96,24 @@ const CirclesField = () => {
         await connection.send('CreateCircle', { x: x, y: y });
     }
 
-    drawCircles();
+    const handleChange = (color: string, isOn: string) => {
+        alert(`${color}: ${isOn}`);
+        //TODO
+    }
+
+    drawCircles(circlesStore.circles);
 
     return (
-        <svg
-            ref={svgRef}
-            width={640}
-            height={480}
-            onClick={(e: React.MouseEvent) => handleClick(e.clientX, e.clientY)}>
-
-        </svg>
+        <>
+            <svg
+                ref={svgRef}
+                width={640}
+                height={480}
+                onClick={(e: React.MouseEvent) => handleClick(e.clientX, e.clientY)}>
+            </svg>
+            
+        </>
     );
-}
+})
 
 export default CirclesField;

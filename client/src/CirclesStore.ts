@@ -7,13 +7,26 @@ class CirclesStore {
     constructor() {
         makeObservable(this, {
             circles: observable,
-            addCircle: action
+            addCircle: action,
+            removeCircle: action,
+            updateCircles: action
         })
         this.circles = []
     }
 
-    addCircle(x: number, y: number) {
-        //TODO
+    updateCircles(dtos: CircleDto[]) {
+        this.circles = dtos;
+    }
+
+    addCircle(dto: CircleDto) {
+        this.circles.push(dto)
+    }
+
+    removeCircle(id: number) {
+        const index = this.circles.findIndex(c => c.id === id);
+        if (index > -1) {
+            this.circles.splice(index, 1);
+        }
     }
 
 }
