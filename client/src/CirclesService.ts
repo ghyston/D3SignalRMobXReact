@@ -11,8 +11,6 @@ class CirclesService {
         this.createConnection();
         await this.connection?.start();
 
-        this.connection?.send('SubscribeToColor', "red");
-
         this.connection?.on("CircleCreated", (dto: CircleDto) => {
             circlesStore.addCircle(dto)
         });
@@ -26,6 +24,14 @@ class CirclesService {
         this.connection?.off("CircleCreated");
         this.connection?.off("CircleRemoved");
         await this.connection?.stop();
+    }
+
+    subscribe(color: "red" | "blue" | "orange" | "yellow" | "green") {
+        this.connection?.send('SubscribeToColor', color);
+    }
+
+    unsubscribe(color: "red" | "blue" | "orange" | "yellow" | "green") {
+        this.connection?.send('UnsubscribeToColor', color);
     }
 
     initialLoad() {

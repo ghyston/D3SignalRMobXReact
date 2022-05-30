@@ -34,7 +34,6 @@ public class CircleHub : Hub<ICirclesClient>
         circlesContext.Circles.Add(circle);
         await circlesContext.Save();
         
-        // TODO: check, how to send messages to not all clients
         var createDto = circle.CreateDto();
         await Clients.Group(circle.Color).CircleCreated(createDto);
         await Clients.Caller.CircleCreated(createDto);
@@ -50,13 +49,19 @@ public class CircleHub : Hub<ICirclesClient>
         circlesContext.Circles.Remove(circle);
         await circlesContext.Save();
 
-        // TODO: check, how to send messages to not all clients
         await Clients.Group(circle.Color).CircleRemoved(circle.Id);
         await Clients.Caller.CircleRemoved(circle.Id);
     }
 
     public async Task SubscribeToColor(string color)
     {
+        Console.WriteLine($"Client subscribed to group {color}");
         await Groups.AddToGroupAsync(Context.ConnectionId, color);
+    }
+
+    public async Task UnsubscribeToColor(string color)
+    {
+        Console.WriteLine($"Client unsubscribed to group {color}");
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, color);
     }
 }
